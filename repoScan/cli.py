@@ -1,6 +1,7 @@
 #cli.py --> command line interface for automation tool
 #cd /home/chief/projects/repoScanner && python3 -m repoScan.cli 2>&1 (exection command)
 
+import os
 import sys
 
 from .analyzer.dependencyAnalyzer import dependency_analyzer
@@ -36,6 +37,7 @@ from .utility.helpers import help_guide
 def main():
     # Parse arguments
     root = "."
+    path_given = False
     mode = "stats"  # Default mode
     
     args = sys.argv[1:]
@@ -76,7 +78,14 @@ def main():
                 print(f"Error: {arg} requires a filename argument.")
                 sys.exit(1)
         else:
+            if not os.path.exists(arg):
+                print(f"Error: repository path does not exist: {arg!r}", file=sys.stderr)
+                sys.exit(2)
+            if path_given:
+                print("Error: expected only one repository path", file=sys.stderr)
+                sys.exit(2)
             root = arg
+            path_given = True
         i += 1    
 
     files = dir_scanner(root)

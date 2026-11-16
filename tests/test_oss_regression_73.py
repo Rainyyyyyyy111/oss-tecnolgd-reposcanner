@@ -26,6 +26,26 @@ def test_unknown_option_after_path(monkeypatch, tmp_path, capsys, option):
     assert not (tmp_path / "output" / "report.json").exists()
 
 
+@pytest.mark.parametrize("args", [
+    ["missing"], [")"], [","], ["&"], ["x"],
+    ["repo", "."], [".", "repo"], [".", "."], ["repo", "--stats", "."],
+])
+def test_invalid_positional_paths(monkeypatch, tmp_path, capsys, args):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "repo").mkdir()
+    monkeypatch.setattr(sys, "argv", ["reposcan", *args])
+    scan = Mock(return_value=[])
+    monkeypatch.setattr(cli, "dir_scanner", scan)
+
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
+
+    assert exc.value.code == 2
+    assert "Error:" in capsys.readouterr().err
+    scan.assert_not_called()
+    assert not (tmp_path / "output" / "report.json").exists()
+
+
 @pytest.mark.parametrize(("args", "root", "expected"), [
     ([], ".", "STATS/SUMMARY"),
     (["--raw", "a--project"], "a--project", "RAW/DEVELOPER"),
